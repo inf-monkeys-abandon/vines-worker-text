@@ -10,6 +10,13 @@ import signal
 import os
 from dotenv import load_dotenv
 import uuid
+from langchain.text_splitter import (
+    RecursiveCharacterTextSplitter,
+    CharacterTextSplitter,
+    Language,
+    MarkdownHeaderTextSplitter,
+    TokenTextSplitter,
+)
 
 load_dotenv()
 
@@ -90,15 +97,46 @@ def test_handler(task):
     if not txt_url or not split_type or not chunk_size or not chunk_overlap:
         raise Exception("参数错误")
 
-    tmp_file_folder = ensure_directory_exists('./download')
-    txt_file_name = f"{tmp_file_folder}/{uuid.uuid4()}.txt"
-    oss_client.download_file(txt_url, txt_file_name)
+    tmp_file_folder = ensure_directory_exists("./download")
+    txt_file_name = oss_client.download_file(txt_url, tmp_file_folder)
 
-    return {"success": True}
+    with open(txt_file_name, "r", encoding="utf-8") as f:
+        text = f.read()
+    splitter = None
+    if split_type == "splitByCharacter":
+        splitter = CharacterTextSplitter(
+            separator=separator,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+        )
+    elif split_type == "splitCode":
+        splitter = RecursiveCharacterTextSplitter.from_language(
+            language=language,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+        )
+    elif split_type == "markdown":
+        headers_to_split_on = [
+            ("#", "Header 1"),
+            ("##", "Header 2"),
+            ("###", "Header 3"),
+        ]
+        splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+    elif split_type == "recursivelySplitByCharacter":
+        splitter = RecursiveCharacterTextSplitter(chunk_size, chunk_overlap)
+    elif split_type == "splitByToken":
+        splitter = CharacterTextSplitter.from_tiktoken_encoder(
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        )
+    else:
+        raise Exception(f"split_type 参数错误")
+
+    segments = splitter.split_text(text)
+    print("转换完成")
+    return {"results": segments}
 
 
 if __name__ == "__main__":
     conductor_client.register_block(block_def)
     conductor_client.register_handler(block_name, test_handler)
     conductor_client.start_polling()
-

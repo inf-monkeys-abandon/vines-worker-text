@@ -1,4 +1,4 @@
-vines-worker-sdk==0.0.6
+vines-worker-sdk==0.0.7
 langchain
 load
 python-dotenv
