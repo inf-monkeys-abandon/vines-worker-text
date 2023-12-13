@@ -3,20 +3,20 @@ import sys
 from vines_worker_sdk.conductor import ConductorClient
 from vines_worker_sdk.oss import OSSClient
 from vines_worker_sdk.utils.files import ensure_directory_exists
-from block_def import (
-    block_def,
-    block_name,
-    block_def_2,
-    block_name_2,
-    block_def_3,
-    block_name_3,
-    block_name_4,
-    block_def_4,
-    block_name_5,
-    block_def_5,
-)
-import threading
-import time
+from vines_worker_sdk.utils.string import generate_random_string
+
+from src.utils.file_convert_helper import FileConvertHelper
+from src.worker.text_segment import BLOCK_NAME as TEXT_SEGMENT_BLOCK_NAME, BLOCK_DEF as TEXT_SEGMENT_BLOCK_DEF
+from src.worker.text_replace import BLOCK_NAME as TEXT_REPLACE_BLOCK_NAME, BLOCK_DEF as TEXT_REPLACE_BLOCK_DEF
+from src.worker.text_combination import BLOCK_NAME as TEXT_COMBINATION_BLOCK_NAME, \
+    BLOCK_DEF as TEXT_COMBINATION_BLOCK_DEF
+from src.worker.pdf_to_txt import BLOCK_NAME as PDF_TO_TXT_BLOCK_NAME, BLOCK_DEF as PDF_TO_TXT_BLOCK_DEF
+from src.worker.pp_structure import BLOCK_NAME as PP_STRUCTURE_BLOCK_NAME, BLOCK_DEF as PP_STRUCTURE_BLOCK_DEF
+from src.worker.file_convert import BLOCK_NAME as FILE_CONVERT_BLOCK_NAME, BLOCK_DEF as FILE_CONVERT_BLOCK_DEF
+from src.worker.extract_url_content import BLOCK_NAME as EXTRACT_URL_CONTENT_BLOCK_NAME, \
+    BLOCK_DEF as EXTRACT_URL_CONTENT_BLOCK_DEF
+
+import json
 import signal
 import os
 from dotenv import load_dotenv
@@ -24,12 +24,13 @@ import uuid
 from langchain.text_splitter import (
     RecursiveCharacterTextSplitter,
     CharacterTextSplitter,
-    Language,
     MarkdownHeaderTextSplitter,
-    TokenTextSplitter,
 )
 import subprocess
-from src.ocr_helper import OCRHelper
+from src.utils.ocr_helper import OCRHelper
+from langchain.document_loaders import UnstructuredURLLoader
+from langchain.document_loaders import SeleniumURLLoader
+
 load_dotenv()
 
 S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID")
@@ -47,27 +48,30 @@ oss_client = OSSClient(
     base_url=S3_BASE_URL,
 )
 
-
 SERVICE_REGISTRATION_URL = os.environ.get("SERVICE_REGISTRATION_URL")
 SERVICE_REGISTRATION_TOKEN = os.environ.get("SERVICE_REGISTRATION_TOKEN")
 CONDUCTOR_BASE_URL = os.environ.get("CONDUCTOR_BASE_URL")
+CONDUCTOR_CLIENT_NAME_PREFIX = os.environ.get("CONDUCTOR_CLIENT_NAME_PREFIX", "")
 CONDUCTOR_USERNAME = os.environ.get("CONDUCTOR_USERNAME")
 CONDUCTOR_PASSWORD = os.environ.get("CONDUCTOR_PASSWORD")
 WORKER_ID = os.environ.get("WORKER_ID")
 
+REDIS_URL = os.environ.get("REDIS_URL")
 
+CONDUCTOR_EXTERNAL_STORAGE_TMP_FOLDER = os.path.join(os.path.dirname(__file__), "external-storage")
 conductor_client = ConductorClient(
-    poll_interval_ms=10,
+    redis_url=REDIS_URL,
     service_registration_url=SERVICE_REGISTRATION_URL,
     service_registration_token=SERVICE_REGISTRATION_TOKEN,
     conductor_base_url=CONDUCTOR_BASE_URL,
+    worker_name_prefix=CONDUCTOR_CLIENT_NAME_PREFIX,
     worker_id=WORKER_ID,
     authentication_settings={
         "username": CONDUCTOR_USERNAME,
         "password": CONDUCTOR_PASSWORD,
     },
     external_storage=oss_client,
-    task_output_payload_size_threshold_kb=1024 * 10
+    external_storage_tmp_folder=CONDUCTOR_EXTERNAL_STORAGE_TMP_FOLDER,
 )
 
 
@@ -83,7 +87,7 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 
 
-def text_segment_handler(task):
+def text_segment_handler(task, workflow_context):
     workflow_instance_id = task.get("workflowInstanceId")
     task_id = task.get("taskId")
     task_type = task.get('taskType')
@@ -144,7 +148,7 @@ def text_segment_handler(task):
     return {"result": segments}
 
 
-def text_replace_handler(task):
+def text_replace_handler(task, workflow_context):
     workflow_instance_id = task.get("workflowInstanceId")
     task_id = task.get("taskId")
     task_type = task.get('taskType')
@@ -181,7 +185,7 @@ def text_replace_handler(task):
         return {"result": url}
 
 
-def text_combination_handler(task):
+def text_combination_handler(task, workflow_context):
     workflow_instance_id = task.get("workflowInstanceId")
     task_id = task.get("taskId")
     task_type = task.get('taskType')
@@ -276,7 +280,8 @@ def text_combination_handler(task):
         )
         return {"result": url}
 
-def pdf_to_txt_handler(task):
+
+def pdf_to_txt_handler(task, workflow_context):
     workflow_instance_id = task.get("workflowInstanceId")
     task_id = task.get("taskId")
     task_type = task.get('taskType')
@@ -353,14 +358,13 @@ def pdf_to_txt_handler(task):
     except subprocess.CalledProcessError as e:
         print(f"pandoc 转换失败，错误信息为 {e}")
         raise Exception("pandoc 转换失败")
-    
-    url = oss_client.upload_file_tos(txt_path, f"workflow/artifact/{task_id}/{uuid.uuid4()}.txt")
 
+    url = oss_client.upload_file_tos(txt_path, f"workflow/artifact/{task_id}/{uuid.uuid4()}.txt")
 
     return {"result": url}
 
 
-def pp_structure(task):
+def pp_structure(task, workflow_context):
     workflow_instance_id = task.get("workflowInstanceId")
     task_id = task.get("taskId")
     task_type = task.get('taskType')
@@ -372,10 +376,10 @@ def pp_structure(task):
     lang = input_data.get("lang")
     isImage = input_data.get("isImage")
     folder = ensure_directory_exists(f"./download/{task_id}")
-
+    input_file = oss_client.download_file(url, folder)
     ocr_helper = OCRHelper()
     try:
-        result = ocr_helper.recognize_text(img_path=str(input_file),task_id=task_id)
+        result = ocr_helper.recognize_text(img_path=str(input_file), task_id=task_id)
         if result is None:
             raise Exception("版面恢复失败")
         # 上传 docx 文件到 OSS
@@ -387,15 +391,95 @@ def pp_structure(task):
         raise Exception(f"版面恢复失败: {e}")
 
 
+def file_convert_handler(task, workflow_context):
+    workflow_instance_id = task.get("workflowInstanceId")
+    task_id = task.get("taskId")
+    task_type = task.get('taskType')
+    print(f"开始执行任务：workflow_instance_id={workflow_instance_id}, task_id={task_id}, task_type={task_type}")
+
+    input_data = task.get("inputData")
+    url = input_data.get("url")
+    helper = FileConvertHelper(url)
+    input_format = input_data.get("input_format")
+    output_format = input_data.get("output_format")
+
+    # 1. 将文件下载到本地
+    task_id = task.task_id if task is not None else generate_random_string(20)
+    input_file = helper.download_file(url, "tmp/" + task_id)
+
+    # 2. 根据 input_format 调用helper
+    if input_format == "png" or input_format == "jpg":
+        output_file = input_file + "." + output_format
+        helper.convert_image(input_file, output_file, output_format)
+    elif input_format == "pdf" and output_format == "docx":
+        output_file = input_file + "." + output_format
+        helper.pdf_to_docx(input_file, output_file)
+    elif input_format == "docx" and output_format == "md":
+        output_file = input_file + "." + output_format
+        helper.docx_to_markdown(input_file, output_file)
+    elif input_format == "pdf" and output_format == "md":
+        output_file = input_file + "." + output_format
+        helper.pdf_to_markdown(input_file, output_file)
+    elif input_format == "xlsx" and output_format == "csv":
+        output_file = input_file + "." + output_format
+        helper.xlsx_to_csv(input_file, output_file)
+    elif input_format == "csv" and output_format == "xlsx":
+        output_file = input_file + "." + output_format
+        helper.csv_to_xlsx(input_file, output_file)
+    else:
+        raise Exception("不支持的格式转换")
+    # 3. 将文件上传到 OSS
+    url = oss_client.upload_file_tos(output_file, key=f"workflow/artifact/{task_id}/{output_file.split('/')[-1]}")
+    print("txt_url", url)
+    # 4. 返回文件 URL
+    return {
+        "result": url,
+    }
+
+
+def extract_url_content(task, workflow_context):
+    workflow_instance_id = task.get("workflowInstanceId")
+    task_id = task.get("taskId")
+    task_type = task.get('taskType')
+    print(f"开始执行任务：workflow_instance_id={workflow_instance_id}, task_id={task_id}, task_type={task_type}")
+
+    input_data = task.get("inputData")
+    url = input_data.get("url")
+    headless = input_data.get("headless")
+    try:
+        if url is None:
+            raise Exception("URL 不能为空")
+        if headless:
+            loader = UnstructuredURLLoader(urls=[url])
+        else:
+            loader = SeleniumURLLoader(urls=[url])
+        document = loader.load()
+        result = {}
+        for doc in document:
+            result["metadata"] = doc.metadata
+            result["page_content"] = doc.page_content
+        # FIX 不能直接返回 json 数据，否则 conductor 序列化会报错
+        return {
+            "result": result,
+        }
+    except Exception as e:
+        raise Exception(f"提取 URL 中的文本失败: {e}")
+
+
 if __name__ == "__main__":
-    conductor_client.register_block(block_def)
-    conductor_client.register_block(block_def_2)
-    conductor_client.register_block(block_def_3)
-    conductor_client.register_block(block_def_4)
-    conductor_client.register_handler(block_name, text_segment_handler)
-    conductor_client.register_handler(block_name_2, text_replace_handler)
-    conductor_client.register_handler(block_name_3, text_combination_handler)
-    conductor_client.register_handler(block_name_4, pdf_to_txt_handler)
-    # conductor_client.register_handler(block_name_5, pp_structure)
+    conductor_client.register_block(TEXT_SEGMENT_BLOCK_DEF)
+    conductor_client.register_handler(TEXT_SEGMENT_BLOCK_NAME, text_segment_handler)
+    conductor_client.register_block(TEXT_REPLACE_BLOCK_DEF)
+    conductor_client.register_handler(TEXT_REPLACE_BLOCK_NAME, text_replace_handler)
+    conductor_client.register_block(TEXT_COMBINATION_BLOCK_DEF)
+    conductor_client.register_handler(TEXT_COMBINATION_BLOCK_NAME, text_combination_handler)
+    conductor_client.register_block(PDF_TO_TXT_BLOCK_DEF)
+    conductor_client.register_handler(PDF_TO_TXT_BLOCK_NAME, pdf_to_txt_handler)
+    conductor_client.register_block(PP_STRUCTURE_BLOCK_DEF)
+    conductor_client.register_handler(PP_STRUCTURE_BLOCK_NAME, pp_structure)
+    conductor_client.register_block(FILE_CONVERT_BLOCK_DEF)
+    conductor_client.register_handler(FILE_CONVERT_BLOCK_NAME, file_convert_handler)
+    conductor_client.register_block(EXTRACT_URL_CONTENT_BLOCK_DEF)
+    conductor_client.register_handler(EXTRACT_URL_CONTENT_BLOCK_NAME, extract_url_content)
 
     conductor_client.start_polling()

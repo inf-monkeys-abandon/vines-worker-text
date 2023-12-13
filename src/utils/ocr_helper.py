@@ -1,7 +1,7 @@
 import os
 import subprocess
-import cv2
-from paddleocr import PaddleOCR, PPStructure, save_structure_res
+from paddleocr import PaddleOCR, PPStructure
+
 
 class OCRHelper:
     def __init__(self, language="ch"):
@@ -57,6 +57,7 @@ class OCRHelper:
             "--output",
             save_folder,
         ]
+        print("识别文本：", ' '.join(cmd))
         # 
         try:
             result = subprocess.run(cmd, shell=False, check=True)
