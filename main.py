@@ -15,6 +15,8 @@ from src.worker.pp_structure import BLOCK_NAME as PP_STRUCTURE_BLOCK_NAME, BLOCK
 from src.worker.file_convert import BLOCK_NAME as FILE_CONVERT_BLOCK_NAME, BLOCK_DEF as FILE_CONVERT_BLOCK_DEF
 from src.worker.extract_url_content import BLOCK_NAME as EXTRACT_URL_CONTENT_BLOCK_NAME, \
     BLOCK_DEF as EXTRACT_URL_CONTENT_BLOCK_DEF
+from src.worker.ocr import BLOCK_NAME as OCR_BLOCK_NAME, \
+    BLOCK_DEF as OCR_BLOCK_DEF
 
 import json
 import signal
@@ -30,6 +32,7 @@ import subprocess
 from src.utils.ocr_helper import OCRHelper
 from langchain.document_loaders import UnstructuredURLLoader
 from langchain.document_loaders import SeleniumURLLoader
+from paddleocr import PaddleOCR
 
 load_dotenv()
 
@@ -466,6 +469,42 @@ def extract_url_content(task, workflow_context):
         raise Exception(f"提取 URL 中的文本失败: {e}")
 
 
+def ocr_handler(task, workflow_context):
+    workflow_instance_id = task.get("workflowInstanceId")
+    task_id = task.get("taskId")
+    print(
+        f"开始执行任务：workflow_instance_id={workflow_instance_id}, task_id={task_id}")
+
+    input_data = task.get("inputData")
+    image_url = input_data.get("url")
+    tmp_file_folder = ensure_directory_exists("./download")
+    image_file_name = oss_client.download_file(image_url, tmp_file_folder)
+
+    ocr = PaddleOCR(
+        # 检测模型
+        # det_model_dir='{your_det_model_dir}',
+        # # 识别模型
+        # rec_model_dir='{your_rec_model_dir}',
+        # # 识别模型字典
+        # rec_char_dict_path='{your_rec_char_dict_path}',
+        # # 分类模型
+        # cls_model_dir='{your_cls_model_dir}',
+        # 加载分类模型
+        use_angle_cls=True,
+        lang='ch',
+    )
+    result = ocr.ocr(image_file_name, cls=True)
+    extracted_texts = []
+    for item in result:
+        for text_block in item:
+            text = text_block[1][0]
+            extracted_texts.append(text)
+    text = "\n".join(extracted_texts)
+
+    print(text)
+    return {"result": text}
+
+
 if __name__ == "__main__":
     conductor_client.register_block(TEXT_SEGMENT_BLOCK_DEF)
     conductor_client.register_handler(TEXT_SEGMENT_BLOCK_NAME, text_segment_handler)
@@ -481,5 +520,6 @@ if __name__ == "__main__":
     conductor_client.register_handler(FILE_CONVERT_BLOCK_NAME, file_convert_handler)
     conductor_client.register_block(EXTRACT_URL_CONTENT_BLOCK_DEF)
     conductor_client.register_handler(EXTRACT_URL_CONTENT_BLOCK_NAME, extract_url_content)
-
+    conductor_client.register_block(OCR_BLOCK_DEF)
+    conductor_client.register_handler(OCR_BLOCK_NAME, ocr_handler)
     conductor_client.start_polling()
