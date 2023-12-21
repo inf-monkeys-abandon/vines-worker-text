@@ -4,7 +4,7 @@ BLOCK_DEF = {
     "name": BLOCK_NAME,
     "categories": ["text"],
     "displayName": "文本合并",
-    "icon": "emoji:🫶:#fef8a3",
+    "icon": "emoji:✂️:#f3cd5f",
     "extra": {
         "estimateTime": 30,
     },
@@ -16,15 +16,9 @@ BLOCK_DEF = {
             "default": "text",
             "required": False,
             "options": [
-                {
-                    "name": "纯文本内容",
-                    "value": "text"
-                },
-                {
-                    "name": "文本链接",
-                    "value": "url"
-                }
-            ]
+                {"name": "纯文本内容", "value": "text"},
+                {"name": "文本链接", "value": "url"},
+            ],
         },
         {
             "displayName": "需要合并的文档列表（支持JSON，JSONL，TXT）",
@@ -32,11 +26,7 @@ BLOCK_DEF = {
             "type": "collection",
             "default": [],
             "required": False,
-            "displayOptions": {
-                "show": {
-                    "textOrUrl": ["text"]
-                }
-            }
+            "displayOptions": {"show": {"textOrUrl": ["text"]}},
         },
         {
             "displayName": "需要合并的文档 URL 列表（支持JSON，JSONL，TXT）",
@@ -44,11 +34,7 @@ BLOCK_DEF = {
             "type": "collection",
             "default": [],
             "required": False,
-            "displayOptions": {
-                "show": {
-                    "textOrUrl": ["url"]
-                }
-            }
+            "displayOptions": {"show": {"textOrUrl": ["url"]}},
         },
         {
             "displayName": "文本格式",

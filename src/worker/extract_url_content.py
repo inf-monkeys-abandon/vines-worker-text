@@ -2,10 +2,10 @@ BLOCK_NAME = "extract_url_content"
 BLOCK_DEF = {
     "type": "SIMPLE",
     "name": BLOCK_NAME,
-    "categories": ["text"],
-    "displayName": "提取 URL 内容",
+    "categories": ["file"],
+    "displayName": "URL 文本提取",
     "description": "从 URL 中提取 HTML 内容",
-    "icon": "emoji:🤏:#fef8a",
+    "icon": "emoji:📝:#56b4a2",
     "extra": {
         "estimateTime": 30,
     },

@@ -2,12 +2,12 @@ BLOCK_NAME = "ocr"
 BLOCK_DEF = {
     "type": "SIMPLE",
     "name": BLOCK_NAME,
-    "categories": ["text"],
+    "categories": ["file"],
     "displayName": "OCR 识别",
     "description": "使用 OCR 进行识别",
-    "icon": 'emoji:🔍:#fef8a3',
+    "icon": "emoji:📝:#56b4a2",
     "extra": {
-            "estimateTime": 10,
+        "estimateTime": 10,
     },
     "input": [
         {

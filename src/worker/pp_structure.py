@@ -2,10 +2,10 @@ BLOCK_NAME = "pp_structure"
 BLOCK_DEF = {
     "type": "SIMPLE",
     "name": BLOCK_NAME,
-    "categories": ["text"],
+    "categories": ["file"],
     "displayName": "版面恢复",
     "description": "对复杂文档进行分析和处理",
-    "icon": "emoji:🤏:#fef8a3",
+    "icon": "emoji:📝:#56b4a2",
     "extra": {
         "estimateTime": 60,
     },

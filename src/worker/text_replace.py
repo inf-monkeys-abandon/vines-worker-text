@@ -5,7 +5,7 @@ BLOCK_DEF = {
     "categories": ["text"],
     "displayName": "文本替换",
     "description": "将文档指定内容替换为另一内容，返回新的文档 URL",
-    "icon": "emoji:🤏:#fef8a3",
+    "icon": "emoji:✂️:#f3cd5f",
     "extra": {
         "estimateTime": 30,
     },

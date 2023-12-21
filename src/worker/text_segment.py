@@ -4,7 +4,7 @@ BLOCK_DEF = {
     "name": BLOCK_NAME,
     "displayName": "长文本分段",
     "description": "根据不同类型的文件进行文本分段",
-    "icon": "emoji:✂️:#fef8a3",
+    "icon": "emoji:✂️:#f3cd5f",
     "categories": ["text"],
     "extra": {
         "estimateTime": 60,

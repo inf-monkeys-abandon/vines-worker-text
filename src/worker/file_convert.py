@@ -2,10 +2,10 @@ BLOCK_NAME = "file_convert"
 BLOCK_DEF = {
     "type": "SIMPLE",
     "name": BLOCK_NAME,
-    "categories": ["text"],
+    "categories": ["file"],
     "displayName": "文件格式转换",
     "description": "对文件格式进行转换",
-    "icon": "emoji:🔁:#fef8a",
+    "icon": "emoji:📝:#56b4a2",
     "extra": {
         "estimateTime": 10,
     },
