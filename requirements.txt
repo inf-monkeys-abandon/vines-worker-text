@@ -4,3 +4,4 @@ load
 python-dotenv
 paddleocr
 paddlepaddle
+selenium
