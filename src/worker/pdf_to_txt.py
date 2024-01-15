@@ -13,9 +13,14 @@ BLOCK_DEF = {
         {
             "displayName": "PDF 文件链接",
             "name": "pdfUrl",
-            "type": "string",
+            "type": "file",
             "default": "",
             "required": True,
+            "typeOptions": {
+                "multipleValues": False,
+                "accept": ".pdf",
+                "maxSize": 1024 * 1024 * 20
+            }
         },
     ],
     "output": [

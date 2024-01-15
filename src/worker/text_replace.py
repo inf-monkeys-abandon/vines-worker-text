@@ -42,7 +42,7 @@ BLOCK_DEF = {
         {
             "displayName": "文档 URL",
             "name": "documentUrl",
-            "type": "string",
+            "type": "file",
             "default": "",
             "required": False,
             "displayOptions": {
@@ -50,6 +50,11 @@ BLOCK_DEF = {
                     "documentType": ["documentUrl"],
                 },
             },
+            "typeOptions": {
+                "multipleValues": True,
+                "accept": ".txt",
+                "maxSize": 1024 * 1024 * 20
+            }
         },
         {
             "displayName": "在文档中搜索的文本",

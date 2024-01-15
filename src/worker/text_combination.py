@@ -31,10 +31,15 @@ BLOCK_DEF = {
         {
             "displayName": "需要合并的文档 URL 列表（支持JSON，JSONL，TXT）",
             "name": "documentsUrl",
-            "type": "collection",
+            "type": "file",
             "default": [],
             "required": False,
             "displayOptions": {"show": {"textOrUrl": ["url"]}},
+            "typeOptions": {
+                "multipleValues": True,
+                "accept": ".json,.jsonl,.txt",
+                "maxSize": 1024 * 1024 * 20
+            }
         },
         {
             "displayName": "文本格式",

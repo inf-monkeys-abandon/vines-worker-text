@@ -13,9 +13,14 @@ BLOCK_DEF = {
         {
             "displayName": "图片 URL",
             "name": "url",
-            "type": "string",
+            "type": "file",
             "default": "",
             "required": True,
+            "typeOptions": {
+                "multipleValues": False,
+                "accept": ".jpg,.jpeg,.png",
+                "maxSize": 1024 * 1024 * 20
+            }
         }
     ],
     "output": [

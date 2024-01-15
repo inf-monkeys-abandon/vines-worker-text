@@ -13,9 +13,14 @@ BLOCK_DEF = {
         {
             "displayName": "文件 URL",
             "name": "url",
-            "type": "string",
+            "type": "file",
             "default": "",
             "required": True,
+            "typeOptions": {
+                "multipleValues": False,
+                "accept": ".png,.jpg,.pdf,.docx,.xlsx,.csv,.md",
+                "maxSize": 1024 * 1024 * 20
+            }
         },
         {
             "displayName": "输入格式",

@@ -13,9 +13,14 @@ BLOCK_DEF = {
         {
             "displayName": "txt 文件",
             "name": "txtUrl",
-            "type": "string",
+            "type": "file",
             "default": "",
             "required": True,
+            "typeOptions": {
+                "multipleValues": True,
+                "accept": ".txt",
+                "maxSize": 1024 * 1024 * 20
+            }
         },
         {
             "displayName": "切割器",
