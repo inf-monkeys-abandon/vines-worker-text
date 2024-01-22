@@ -168,7 +168,10 @@ BLOCK_DEF = {
         {
             "name": "result",
             "displayName": "分段后的文本列表",
-            "type": "collection",
+            "type": "string",
+            "typeOptions": {
+                "multipleValues": True
+            }
         },
     ],
 }

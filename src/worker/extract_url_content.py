@@ -29,7 +29,7 @@ BLOCK_DEF = {
         {
             "name": "result",
             "displayName": "提取结果",
-            "type": "collection",
+            "type": "string",
             "properties": [
                 {
                     "name": "metadata",
@@ -42,6 +42,9 @@ BLOCK_DEF = {
                     "type": "string",
                 },
             ],
+            "typeOptions": {
+                "multipleValues": True
+            }
         },
     ],
 }

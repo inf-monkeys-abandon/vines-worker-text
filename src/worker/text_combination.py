@@ -23,10 +23,13 @@ BLOCK_DEF = {
         {
             "displayName": "需要合并的文档列表（支持JSON，JSONL，TXT）",
             "name": "documents",
-            "type": "collection",
+            "type": "string",
             "default": [],
             "required": False,
             "displayOptions": {"show": {"textOrUrl": ["text"]}},
+            "typeOptions": {
+                "multipleValues": True
+            }
         },
         {
             "displayName": "需要合并的文档 URL 列表（支持JSON，JSONL，TXT）",
