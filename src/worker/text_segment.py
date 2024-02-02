@@ -17,7 +17,7 @@ BLOCK_DEF = {
             "default": "",
             "required": True,
             "typeOptions": {
-                "multipleValues": True,
+                "multipleValues": False,
                 "accept": ".txt",
                 "maxSize": 1024 * 1024 * 20
             }
