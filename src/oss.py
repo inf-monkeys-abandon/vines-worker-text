@@ -1,5 +1,5 @@
 from vines_worker_sdk.oss import OSSClient
-
+import os
 
 S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID")
 S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY")
@@ -15,4 +15,3 @@ oss_client = OSSClient(
     bucket_name=S3_BUCKET_NAME,
     base_url=S3_BASE_URL,
 )
-
