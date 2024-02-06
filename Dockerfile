@@ -3,7 +3,7 @@ FROM nvidia/cuda:12.0.0-cudnn8-runtime-ubuntu22.04
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Shanghai
 RUN apt-get update && \
-    apt-get install git default-jre pandoc python3 python3-pip vim wget curl  -y && \
+    apt-get install git default-jre pandoc python3 python3-pip vim wget curl -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
