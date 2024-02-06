@@ -16,6 +16,9 @@ RUN pip3 install --upgrade pip && \
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt && rm -rf /root/.cache/pip
 
+COPY requirements-vines.txt requirements-vines.txt
+RUN pip3 install -r requirements-vines.txt && rm -rf /root/.cache/pip
+
 # Copy the rest of the files
 COPY . .
 
